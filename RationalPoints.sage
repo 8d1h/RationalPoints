@@ -28,6 +28,9 @@ class MyAlgebraicScheme_subscheme(AlgebraicScheme_subscheme):
             else:
                 return F
         def enum_proj_points(I):
+            R = I.ring()
+            k = R.base()
+            n = R.ngens()-1
             for i in range(n+1):
                 R_ = PolynomialRing(k, 'x', n-i)
                 v = [k(0)]*i+[k(1)]
@@ -65,8 +68,8 @@ class MyAlgebraicScheme_subscheme(AlgebraicScheme_subscheme):
                 S.<u> = F[]
                 pr1 = R.hom([u]+[0]*(n-1),S)
                 possibleValues = (v[0] for v in pr1(g).roots())
-                nonSplit = (f[0] for f in factor(pr1(g)) if f[0].degree() > 1)
                 if split:
+                    nonSplit = (f[0] for f in factor(pr1(g)) if f[0].degree() > 1)
                     for f in nonSplit:
                         F_ = f.splitting_field('a')
                         if ch == 0:
