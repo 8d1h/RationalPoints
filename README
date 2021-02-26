@@ -1,0 +1,4 @@
+Scripts for enumerating rational points on varieties.
+
+- Sage: rational_points.py
+  https://8d1h.github.io/sage
