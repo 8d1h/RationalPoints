@@ -1,26 +1,18 @@
 using Oscar
 
-# get the vector of zeros of a polynomial
-function get_zeros(f)
-    R = parent(f)
-    F = base_ring(R)
-    if total_degree(f) == 1
-        cs = [c for c in coeffs(f)]
-        if length(cs) == 1
-            return [F(0)]
-        else
-            return [F(-cs[2])//F(cs[1])]
-        end
-    else
-        lin_fac = [fi[1] for fi in factor(f) if total_degree(fi[1]) == 1]
-        return [z for fi in lin_fac for z in get_zeros(fi)]
-    end
-end
-
 # evaluate function for an ideal
 function evaluate(I::Oscar.MPolyIdeal, v)
     R = base_ring(I)
     return ideal([R(Oscar.evaluate(f,v)) for f in gens(I)])
+end
+
+# convert to univariate
+function to_univar(a, var::Int, Kx)
+    r = zero(Kx)
+    for (c, ev) in zip(coefficients(a), exponent_vectors(a))
+        setcoeff!(r, ev[var], c)
+    end
+    return r
 end
 
 # enumeration of points; starts with a partial solution `part`
@@ -47,7 +39,7 @@ function enum!(I, part, els, ans)
     if elim == 0
         values = els
     else
-        values = get_zeros(elim)
+        values = roots(to_univar(elim, i+1, F["x"][1]))
     end
     for v in values
         vec = [R(u) for u in vcat(part, [v], rest)]
@@ -55,17 +47,9 @@ function enum!(I, part, els, ans)
     end
 end
 
-# list the elements of a finite field
-function get_elements(F)
-    char = Int(characteristic(F))
-    a = gen(F)
-    d = degree(F)
-    vcat([F(0)], [a^i for i in 0:char^d-2])
-end
-
 # enumeration of points for an affine scheme
 function points(I::Oscar.MPolyIdeal)
-    els = get_elements(base_ring(base_ring(I)))
+    els = collect(base_ring(base_ring(I)))
     ans = []
     enum!(I, [], els, ans)
     ans
@@ -76,7 +60,7 @@ function proj_points(I::Oscar.MPolyIdeal)
     R = base_ring(I)
     F = base_ring(R)
     n = nvars(R)
-    els = get_elements(F)
+    els = collect(F)
     ans = []
     for i in 1:n
         rest = gens(R)[i+1:end]
@@ -89,7 +73,7 @@ end
 
 # example taken from the documentation of Magma
 function example(char=7823)
-    R,(x,y,z,w) = PolynomialRing(FiniteField(char,1,"a")[1],["x","y","z","w"])
+    R,(x,y,z,w) = PolynomialRing(GF(char),["x","y","z","w"])
     I = ideal([4*x*z+2*x*w+y^2+4*y*w+7821*z^2+7820*w^2,4*x^2+4*x*y+7821*x*w+7822*y^2+7821*y*w+7821*z^2+7819*z*w+7820*w^2])
     @time length(proj_points(I))
 end
